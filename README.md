@@ -34,7 +34,8 @@ Because Octocat is the most beloved mascot of programmers in the world. I think.
 - CO2 Sensor MH-Z19C
 - 5V output DCDC boost converter
 - Diode 1S2076A
-- Ceramic capacitors 0.1uF
+- Electrolytic capacitor 47uF
+- Ceramic capacitor 0.1uF
 - DC jack (if needed)
 
 
