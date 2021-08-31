@@ -1,0 +1,14 @@
+{
+  "name": "generate-header-for-monitor",
+  "version": "1.0.0",
+  "description": "Minify monitor.html and make a header file for arduino web server",
+  "main": "main.js",
+  "scripts": {
+    "start": "node main.js"
+  },
+  "author": "Masayuki Kondo",
+  "license": "MIT",
+  "devDependencies": {
+    "minify": "^7.0.2"
+  }
+}

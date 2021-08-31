@@ -1,0 +1,5 @@
+.pio
+.vscode
+
+src/config.h
+tool/node_modules

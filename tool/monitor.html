@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>CO2 monitor</title>
+</head>
+<body>
+<canvas id="chart"></canvas>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+const chart = new Chart(document.getElementById("chart"), {
+  
+  type: 'line',
+  data: {
+    labels: [],
+    datasets: [{ 
+        data: [],
+        label: "CO2(ppm)",
+        borderColor: "#FF5F47",
+        yAxisID: 'y'
+      }, { 
+        data: [],
+        label: "Temperature(Celsius)",
+        borderColor: "#9CA4FF",
+        yAxisID: 'y1',
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    interaction: {
+      mode: 'index',
+      intersect: false,
+    },
+    plugins: {
+      title: {
+        display: true,
+        text: 'CO2 Monitor'
+      }
+    },
+    scales: {
+      y: {
+        type: 'linear',
+        position: 'left',
+        suggestedMin: 400,
+        suggestedMax: 1000,
+      },
+      y1: {
+        type: 'linear',
+        position: 'right',
+        grid: {
+          drawOnChartArea: false,
+        },
+      }
+    }
+  }
+});
+
+
+async function fetchDataAndDrawGraph(){
+  
+  try{   
+    const data = await (await fetch('/histories')).json();
+    const labels = [];
+    for(let i=0;i<data.times.length;i++){
+      labels.push(new Date(Date.now() - data.times[i]).toLocaleTimeString());
+    }
+    
+    chart.data.labels = labels;
+    chart.data.datasets[0].data = data.co2Logs;
+    chart.data.datasets[1].data = data.temperatureLogs;
+    
+    chart.update();
+    
+  }
+  catch(e){
+    console.log('Error cannot get historiesdata', e);
+  }
+  
+}
+
+fetchDataAndDrawGraph();
+setInterval(fetchDataAndDrawGraph, 5000);
+
+</script>
+
+
+</body>
+
+</html>
