@@ -15,7 +15,7 @@ void CO2::begin(){
     char version[5] = {0,0,0,0,0};
 
     mhz_.getVersion(version);
-    Serial.print("CO2 sensor version: ");
+    Serial.print(F("CO2 sensor version: "));
     Serial.println(version);
 
     rotatedDisplay_.begin();
@@ -23,18 +23,6 @@ void CO2::begin(){
 }
 
 void CO2::sensorGotValue(int ppm){
-
-    if(!isStabled_){
-        int diff = lastValue_ - ppm;
-        if(diff > 100){
-            //wait for CO2 sensor to stabilize
-            lastValue_ = ppm;
-            return;
-        }
-        isStabled_ = true;
-    }
-
-    lastValue_ = ppm;
 
     int ppm100 = round(ppm / 100);
 
@@ -60,6 +48,22 @@ void CO2::tick(){
         auto co2 = mhz_.getCO2();
         auto temperature = mhz_.getTemperature() + TEMPERATURE_CALIBRATION_VALUE;
 
+        if(!isStabled_){
+            int diff = lastValue_ - co2;
+            if(diff > 100){
+                Serial.print(F("Waiting for CO2 sensor to stabilize... "));
+                Serial.print(co2);
+                Serial.println(F("ppm"));
+
+                lastValue_ = co2;
+                return;
+            }
+            isStabled_ = true;
+        }
+
+        lastValue_ = co2;
+
+
         sensorGotValue(co2);
 
         auto diffTimeFromLastLog = now - lastLogTime_;
@@ -80,10 +84,10 @@ void CO2::tick(){
             lastLogTime_ = now;
         }
 
-        Serial.print("CO2 (ppm): ");
+        Serial.print(F("CO2 (ppm): "));
         Serial.println(co2);
 
-        Serial.print("Temperature (C): ");
+        Serial.print(F("Temperature (C): "));
         Serial.println(temperature);
 
         lastCO2Time_ = now;
