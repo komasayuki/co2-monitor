@@ -6,7 +6,6 @@
 
 #include <list>
 
-#define HISTORICAL_DATA_MAX_COUNT (60*24) // 1Day (1 log/minute) 
 
 class CO2History{
 public:
@@ -48,6 +47,6 @@ private:
     bool isLEDBlinkingOnTime_ = false;
     unsigned long  lastCO2Time_ = 0;
     unsigned long  lastLogTime_ = 0;
-    bool isStabled_ = false;
+    int stableCount = 0;
     int lastValue_ = INT_MAX;
 };

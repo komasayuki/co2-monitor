@@ -3,6 +3,7 @@
 
 #include <M5Atom.h>
 
+#define HISTORICAL_DATA_MAX_COUNT (500) // more than 1 day CO2 logs
 
 CO2::CO2(){}
 
@@ -46,19 +47,27 @@ void CO2::tick(){
     if(diffTimeFromLastCO2 > 1000){
 
         auto co2 = mhz_.getCO2();
+        lastCO2Time_ = now;
+
         auto temperature = mhz_.getTemperature() + TEMPERATURE_CALIBRATION_VALUE;
 
-        if(!isStabled_){
+        if(stableCount < 5){
+
             int diff = lastValue_ - co2;
-            if(diff > 100){
+            lastValue_ = co2;
+
+            if(abs(diff) > 50){
                 Serial.print(F("Waiting for CO2 sensor to stabilize... "));
                 Serial.print(co2);
                 Serial.println(F("ppm"));
 
-                lastValue_ = co2;
-                return;
+                stableCount = 0;
             }
-            isStabled_ = true;
+            else{
+                stableCount++;
+            }
+
+            return;
         }
 
         lastValue_ = co2;
@@ -68,9 +77,12 @@ void CO2::tick(){
 
         auto diffTimeFromLastLog = now - lastLogTime_;
 
+        //For first 30minutes, Log interval = 5 seconds
         auto logInterval = 5000;
-        if(co2Histories_.size() > 12*60){
-            logInterval = 60000;
+        
+        //After 30minutes, Log interval = 3 minutes
+        if(co2Histories_.size() > 12*30){ 
+            logInterval = 180000;
         }
 
         if(diffTimeFromLastLog  >= logInterval){
@@ -89,8 +101,6 @@ void CO2::tick(){
 
         Serial.print(F("Temperature (C): "));
         Serial.println(temperature);
-
-        lastCO2Time_ = now;
     }
 
 }
