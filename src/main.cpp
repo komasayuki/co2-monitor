@@ -11,11 +11,11 @@ static WifiConnection wifiConnection;
 
 void setup()
 {
-    M5.begin(true, false, true);
-    delay(50);
+    
 
-    RotatedDisplay display;
-    display.begin();
+    M5.begin(true, false, true);
+
+
 
     if(WIFI_DEFAULT_ON){
         wifiConnection.begin();
@@ -23,6 +23,10 @@ void setup()
     }
 
     co2WebServer.beginCO2();
+    delay(500);
+
+    RotatedDisplay display;
+    display.begin();
 
 }
 
@@ -34,21 +38,40 @@ void loop()
     co2WebServer.tick();
 
     static bool usesWifi = WIFI_DEFAULT_ON;
+    static bool wifiButtonEngaged = false;
+    static auto lastWifiRefreshTime = millis();
+
+    auto diff = millis() - lastWifiRefreshTime;
+
+    if(diff > 60 * 60 * 1000){ // per 1 hour, refresh WiFi connection for stable communication
+        lastWifiRefreshTime = millis();
+        wifiConnection.end();
+        wifiConnection.begin();
+    }
+
 
     M5.update();
-    if (M5.Btn.wasPressed()){
+    // handling WiFi ON/OFF by long pressing the button
+    if (M5.Btn.pressedFor(1000) && !wifiButtonEngaged){
         
         usesWifi = !usesWifi;
+        wifiButtonEngaged = true;
 
         if(usesWifi){
             wifiConnection.begin();
+            M5.dis.fillpix(0xff0000); //GRB green
             Serial.println(F("WiFi ON."));
         }
         else{
             wifiConnection.end();
+            M5.dis.fillpix(0xffff00); //GRB yellow
             Serial.println(F("WiFi OFF."));
         }
 
+    }
+
+    if(M5.Btn.releasedFor(1000)){
+        wifiButtonEngaged = false;
     }
 
     delay(50);

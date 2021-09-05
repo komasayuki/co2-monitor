@@ -16,6 +16,8 @@ private:
     void handleRoot();
     void handleGetHistories();
     void handleCalibrate();
+    void handleCalibrateTemperature();
+    void handleClearHistories();
 
     WebServer webServer_;
     CO2 co2_;

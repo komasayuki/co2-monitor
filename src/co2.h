@@ -31,22 +31,29 @@ public:
     void begin();
     void tick();
     void calibrate();
+    void setTemperatureCalibrationValue(float v){
+        temperatureCalibrationValue_ = v;
+    }
+    void clearHistories();
 
     void sensorGotValue(int ppm);
-
-    std::list<CO2History>* co2Histories(){
-        return &co2Histories_;
-    }
-
+    std::list<CO2History>* farCo2Histories();
+    std::list<CO2History>* nearCo2Histories();
+    
 private:
     MHZ19 mhz_; 
     RotatedDisplay rotatedDisplay_;
 
-    std::list<CO2History> co2Histories_;
+    std::list<CO2History> nearCo2Histories_;
+    std::list<CO2History> farCo2Histories_;
+
+    int rawCo2Sum_ = 0;
+    int rawCo2SumCount_ = 0;
+    float rawTemperatureSum_ = 0;
 
     bool isLEDBlinkingOnTime_ = false;
     unsigned long  lastCO2Time_ = 0;
-    unsigned long  lastLogTime_ = 0;
     int stableCount = 0;
     int lastValue_ = INT_MAX;
+    float temperatureCalibrationValue_ = 0;
 };

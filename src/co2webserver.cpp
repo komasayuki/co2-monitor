@@ -5,6 +5,8 @@ CO2WebServer::CO2WebServer(): webServer_(80){
     webServer_.on("/", std::bind(&CO2WebServer::handleRoot, this));
     webServer_.on("/histories", std::bind(&CO2WebServer::handleGetHistories, this));
     webServer_.on("/calibrate", std::bind(&CO2WebServer::handleCalibrate, this));
+    webServer_.on("/temperature", std::bind(&CO2WebServer::handleCalibrateTemperature, this));
+    webServer_.on("/clear", std::bind(&CO2WebServer::handleClearHistories, this));
 }
 
 void CO2WebServer::beginWebServer(){
@@ -44,20 +46,32 @@ void CO2WebServer::handleRoot() {
 
 void CO2WebServer::handleGetHistories() {
 
-    auto histories = co2_.co2Histories();
+    auto farHistories = co2_.farCo2Histories();
+    auto nearHistories = co2_.nearCo2Histories();
 
-    if(histories->empty()){
+    if(nearHistories->empty()){
         webServer_.send(200, "application/json", "{\"times\":[], \"co2Logs\":[], \"temperatureLogs\":[]}");
         return;
     }
 
-    auto latestHistory = histories->back();
+    auto latestHistory = nearHistories->back();
     auto latestTime = latestHistory.time();
 
     String response = "{\"times\":[";
 
     bool isFirst = true;
-    for (std::list<CO2History>::const_iterator it = histories->begin(); it != histories->end(); ++it) {
+    for (std::list<CO2History>::const_iterator it = farHistories->begin(); it != farHistories->end(); ++it) {
+        auto time = it->time();
+
+        if(!isFirst){
+            response += ",";
+        }
+
+        response += String(latestTime - time);
+        isFirst = false;
+    }
+
+    for (std::list<CO2History>::const_iterator it = nearHistories->begin(); it != nearHistories->end(); ++it) {
         auto time = it->time();
 
         if(!isFirst){
@@ -71,7 +85,19 @@ void CO2WebServer::handleGetHistories() {
     response += "], \"co2Logs\":[";
 
     isFirst = true;
-    for (std::list<CO2History>::const_iterator it = histories->begin(); it != histories->end(); ++it) {
+    for (std::list<CO2History>::const_iterator it = farHistories->begin(); it != farHistories->end(); ++it) {
+        auto co2 = it->co2();
+
+        if(!isFirst){
+            response += ",";
+        }
+        
+        response += String(co2);
+        isFirst = false;
+    }
+
+
+    for (std::list<CO2History>::const_iterator it = nearHistories->begin(); it != nearHistories->end(); ++it) {
         auto co2 = it->co2();
 
         if(!isFirst){
@@ -85,7 +111,18 @@ void CO2WebServer::handleGetHistories() {
     response += "], \"temperatureLogs\":[";
 
     isFirst = true;
-    for (std::list<CO2History>::const_iterator it = histories->begin(); it != histories->end(); ++it) {
+    for (std::list<CO2History>::const_iterator it = farHistories->begin(); it != farHistories->end(); ++it) {
+        auto temperature = it->temperature();
+
+        if(!isFirst){
+            response += ",";
+        }
+        
+        response += String(temperature);
+        isFirst = false;
+    }
+
+    for (std::list<CO2History>::const_iterator it = nearHistories->begin(); it != nearHistories->end(); ++it) {
         auto temperature = it->temperature();
 
         if(!isFirst){
@@ -115,3 +152,48 @@ void CO2WebServer::handleCalibrate() {
 
     webServer_.send(200, "text/html", contents);
 }
+
+
+
+void CO2WebServer::handleCalibrateTemperature(){
+
+    if(webServer_.hasArg("value")){
+
+        String contents = "<html><body>Temperature calibrated. value: ";
+        
+        float v = webServer_.arg("value").toFloat();
+        co2_.setTemperatureCalibrationValue(v);
+
+        contents += String(v);
+        contents += "</body></html>";
+
+        webServer_.send(200, "text/html", contents);
+    }
+    else{
+
+        String contents = F(
+        "<html><body>"
+        "Please set \"value\" param for temperature calibration."
+        "</body></html>"
+        );
+
+        webServer_.send(200, "text/html", contents);
+
+    }
+
+}
+
+
+void CO2WebServer::handleClearHistories() {
+
+    String contents = F(
+    "<html><body>"
+    "Histories are cleared."
+    "</body></html>"
+    );
+
+    co2_.clearHistories();
+
+    webServer_.send(200, "text/html", contents);
+}
+

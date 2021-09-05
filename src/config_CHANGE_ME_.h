@@ -10,4 +10,4 @@
 #define CO2_TXPIN  (23)
 #define CO2_RXPIN  (33)
 
-#define TEMPERATURE_CALIBRATION_VALUE (0)
+#define CO2_SENSOR_AUTO_CALIBRATION (false)

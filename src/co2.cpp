@@ -3,7 +3,10 @@
 
 #include <M5Atom.h>
 
-#define HISTORICAL_DATA_MAX_COUNT (500) // more than 1 day CO2 logs
+#define HIGH_FREQUENNCY_COUNT (36)
+#define LOW_FREQUENNCY_COUNT (480)
+#define HISTORICAL_DATA_MAX_COUNT (LOW_FREQUENNCY_COUNT + HIGH_FREQUENNCY_COUNT) // more than 1 day CO2 logs
+
 
 CO2::CO2(){}
 
@@ -11,7 +14,13 @@ void CO2::begin(){
 
     Serial2.begin(9600, SERIAL_8N1, CO2_RXPIN, CO2_TXPIN);
     mhz_.begin(Serial2);
-    mhz_.autoCalibration(false);
+
+    if(CO2_SENSOR_AUTO_CALIBRATION){
+        mhz_.autoCalibration(true);
+    }
+    else{
+        mhz_.autoCalibration(false);
+    }
 
     char version[5] = {0,0,0,0,0};
 
@@ -44,56 +53,72 @@ void CO2::tick(){
     auto now = millis();
     auto diffTimeFromLastCO2 = now - lastCO2Time_;
 
-    if(diffTimeFromLastCO2 > 1000){
+    auto rawCo2 = mhz_.getCO2();
 
-        auto co2 = mhz_.getCO2();
-        lastCO2Time_ = now;
+    if(stableCount < 5){
 
-        auto temperature = mhz_.getTemperature() + TEMPERATURE_CALIBRATION_VALUE;
+        int diff = lastValue_ - rawCo2;
+        lastValue_ = rawCo2;
 
-        if(stableCount < 5){
+        if(abs(diff) > 50){
+            Serial.print(F("Waiting for CO2 sensor to stabilize... "));
+            Serial.print(rawCo2);
+            Serial.println(F("ppm"));
 
-            int diff = lastValue_ - co2;
-            lastValue_ = co2;
-
-            if(abs(diff) > 50){
-                Serial.print(F("Waiting for CO2 sensor to stabilize... "));
-                Serial.print(co2);
-                Serial.println(F("ppm"));
-
-                stableCount = 0;
-            }
-            else{
-                stableCount++;
-            }
-
-            return;
+            stableCount = 0;
+        }
+        else{
+            stableCount++;
         }
 
-        lastValue_ = co2;
+        return;
+    }
 
+    lastValue_ = rawCo2;
+
+    rawCo2Sum_ += rawCo2;
+    rawCo2SumCount_ ++;
+
+    auto rawTemperature = mhz_.getTemperature(true) + temperatureCalibrationValue_;
+    rawTemperatureSum_ += rawTemperature;
+
+
+    if(diffTimeFromLastCO2 > 5000){
+
+        auto co2 = rawCo2Sum_ / rawCo2SumCount_;
+        auto temperature = rawTemperatureSum_ / rawCo2SumCount_;
+        rawCo2Sum_ = 0;
+        rawTemperatureSum_ = 0;
+        rawCo2SumCount_ =  0;
+        
+        lastCO2Time_ = now;
 
         sensorGotValue(co2);
 
-        auto diffTimeFromLastLog = now - lastLogTime_;
+        auto totalSize = nearCo2Histories_.size() + farCo2Histories_.size();
 
-        //For first 30minutes, Log interval = 5 seconds
-        auto logInterval = 5000;
-        
-        //After 30minutes, Log interval = 3 minutes
-        if(co2Histories_.size() > 12*30){ 
-            logInterval = 180000;
-        }
+        nearCo2Histories_.emplace_back(now, co2, temperature);
 
-        if(diffTimeFromLastLog  >= logInterval){
+        if(nearCo2Histories_.size() > HIGH_FREQUENNCY_COUNT && totalSize > HISTORICAL_DATA_MAX_COUNT){
 
-            co2Histories_.emplace_back(now, co2, temperature);
+            int co2Sum = 0;
+            float temperatureSum = 0;
+            unsigned long long timeSum = 0;
 
-            if(co2Histories_.size() > HISTORICAL_DATA_MAX_COUNT){
-                co2Histories_.pop_front();
+            for(int i=0;i<HIGH_FREQUENNCY_COUNT;i++){
+                auto e = nearCo2Histories_.front();
+                co2Sum  += e.co2();
+                temperatureSum += e.temperature();
+                timeSum += e.time();
+                nearCo2Histories_.pop_front();
             }
 
-            lastLogTime_ = now;
+            farCo2Histories_.emplace_back(timeSum/HIGH_FREQUENNCY_COUNT, co2Sum/HIGH_FREQUENNCY_COUNT, temperatureSum/HIGH_FREQUENNCY_COUNT);
+        }
+        
+
+        if(farCo2Histories_.size() > LOW_FREQUENNCY_COUNT){
+            farCo2Histories_.pop_front();
         }
 
         Serial.print(F("CO2 (ppm): "));
@@ -106,6 +131,21 @@ void CO2::tick(){
 }
 
 
+std::list<CO2History>* CO2::farCo2Histories(){
+    return &farCo2Histories_;
+}
+
+std::list<CO2History>* CO2::nearCo2Histories(){
+    return &nearCo2Histories_;
+}
+
+
 void CO2::calibrate(){
     mhz_.calibrate();
+}
+
+
+void CO2::clearHistories(){
+    nearCo2Histories_.clear();
+    farCo2Histories_.clear();
 }

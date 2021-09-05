@@ -6,7 +6,10 @@
 </head>
 <body>
 <canvas id="chart"></canvas>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.5.1"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.29.1"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@1.0.0"></script>
 
 <script>
 const chart = new Chart(document.getElementById("chart"), {
@@ -49,9 +52,27 @@ const chart = new Chart(document.getElementById("chart"), {
       y1: {
         type: 'linear',
         position: 'right',
+        suggestedMin: 20,
+        suggestedMax: 30,
         grid: {
           drawOnChartArea: false,
         },
+      },
+      x: {
+        type: 'time',
+        time: {
+          displayFormats: {
+            millisecond : 'H:mm:ss.SSS',
+            second : 'H:mm:ss',
+            minute : 'H:mm',
+            hour : 'H:mm',
+            day : 'H:mm',
+            week : 'H:mm',
+            month : 'H:mm',
+            quarter : 'H:mm',
+            year : 'H:mm'
+          }
+        }
       }
     }
   }
@@ -64,7 +85,7 @@ async function fetchDataAndDrawGraph(){
     const data = await (await fetch('/histories')).json();
     const labels = [];
     for(let i=0;i<data.times.length;i++){
-      labels.push(new Date(Date.now() - data.times[i]).toLocaleTimeString());
+      labels.push(new Date(Date.now() - data.times[i]));
     }
     
     chart.data.labels = labels;
@@ -77,11 +98,13 @@ async function fetchDataAndDrawGraph(){
   catch(e){
     console.log('Error cannot get historiesdata', e);
   }
+
+  setTimeout(fetchDataAndDrawGraph, 5000);
   
 }
 
 fetchDataAndDrawGraph();
-setInterval(fetchDataAndDrawGraph, 5000);
+setTimeout(fetchDataAndDrawGraph, 5000);
 
 </script>
 
