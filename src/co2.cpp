@@ -55,20 +55,26 @@ void CO2::tick(){
 
     auto rawCo2 = mhz_.getCO2();
 
-    if(stableCount < 5){
+    if(stableCount_ < 10){
+
+        if(rawCo2 > 1000 && now < 10000){
+            Serial.print(F("CO2 value is too high. Waiting ... "));
+            Serial.println(rawCo2);
+            return;
+        }
 
         int diff = lastValue_ - rawCo2;
         lastValue_ = rawCo2;
 
-        if(abs(diff) > 50){
+        if(abs(diff) > 30){
             Serial.print(F("Waiting for CO2 sensor to stabilize... "));
             Serial.print(rawCo2);
             Serial.println(F("ppm"));
 
-            stableCount = 0;
+            stableCount_ = 0;
         }
         else{
-            stableCount++;
+            stableCount_++;
         }
 
         return;

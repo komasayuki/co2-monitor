@@ -53,7 +53,7 @@ private:
 
     bool isLEDBlinkingOnTime_ = false;
     unsigned long  lastCO2Time_ = 0;
-    int stableCount = 0;
+    int stableCount_ = 0;
     int lastValue_ = INT_MAX;
     float temperatureCalibrationValue_ = 0;
 };

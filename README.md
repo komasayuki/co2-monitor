@@ -57,7 +57,7 @@ Because Octocat is the most beloved mascot of programmers in the world. I think.
 # build
 % platformio run
 
-# upload to MtStack Atom Matrix
+# upload to M5Stack Atom Matrix
 % platformio run -t upload
 ```
 
@@ -78,8 +78,3 @@ Please take this device outside and open /calibrate in the browser when the CO2 
 # minify and convert tool/monitor.html to src/indexhtml.h for arduino 
 % npm start
 ```
-
-
-## Do you know?
-
-Octocat isn't her name. Her name is Monalisa.

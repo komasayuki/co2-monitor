@@ -4,6 +4,7 @@
 #include <M5Atom.h>
 #include <WiFi.h>
 #include <ESPmDNS.h>
+#include <ESP32Ping.h>
 
 void WifiConnection::tick(){
 
@@ -16,6 +17,27 @@ void WifiConnection::tick(){
     if (status == WL_CONNECTED){
 
         if(isConnected_){
+
+            auto diff = millis() - lastPingTime_;
+
+            if(diff >  30000){
+                lastPingTime_ = millis();
+
+                auto gateway = WiFi.gatewayIP();
+                if(Ping.ping(gateway)){
+                    Serial.println(F("Ping success."));
+                }
+                else{
+                    Serial.println(F("Ping failed."));
+                    WiFi.disconnect();
+                    WiFi.reconnect();
+                    isConnecting_ = true;
+                    isConnected_ = false;
+                    return;
+                }
+            }
+            
+
             return;
         }
 
@@ -56,6 +78,7 @@ void WifiConnection::tick(){
     if(isConnected_){
         isConnected_ = false;
         WiFi.disconnect();
+        isFirstTrial_ = true;
     }
 
     auto now = millis();

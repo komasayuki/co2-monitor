@@ -39,16 +39,6 @@ void loop()
 
     static bool usesWifi = WIFI_DEFAULT_ON;
     static bool wifiButtonEngaged = false;
-    static auto lastWifiRefreshTime = millis();
-
-    auto diff = millis() - lastWifiRefreshTime;
-
-    if(diff > 60 * 60 * 1000){ // per 1 hour, refresh WiFi connection for stable communication
-        lastWifiRefreshTime = millis();
-        wifiConnection.end();
-        wifiConnection.begin();
-    }
-
 
     M5.update();
     // handling WiFi ON/OFF by long pressing the button
