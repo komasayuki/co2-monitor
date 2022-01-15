@@ -7,6 +7,7 @@ CO2WebServer::CO2WebServer(): webServer_(80){
     webServer_.on("/calibrate", std::bind(&CO2WebServer::handleCalibrate, this));
     webServer_.on("/temperature", std::bind(&CO2WebServer::handleCalibrateTemperature, this));
     webServer_.on("/clear", std::bind(&CO2WebServer::handleClearHistories, this));
+    webServer_.on("/ppm", std::bind(&CO2WebServer::handleGetC02Value, this));
 }
 
 void CO2WebServer::beginWebServer(){
@@ -197,3 +198,8 @@ void CO2WebServer::handleClearHistories() {
     webServer_.send(200, "text/html", contents);
 }
 
+
+
+void CO2WebServer::handleGetC02Value(){
+    webServer_.send(200, "text/plain", String(co2_.currentValue()));
+}

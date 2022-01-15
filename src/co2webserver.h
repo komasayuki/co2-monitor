@@ -18,6 +18,7 @@ private:
     void handleCalibrate();
     void handleCalibrateTemperature();
     void handleClearHistories();
+    void handleGetC02Value();
 
     WebServer webServer_;
     CO2 co2_;

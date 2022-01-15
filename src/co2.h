@@ -35,6 +35,9 @@ public:
         temperatureCalibrationValue_ = v;
     }
     void clearHistories();
+    int currentValue(){
+        return  lastValue_;
+    }
 
     void sensorGotValue(int ppm);
     std::list<CO2History>* farCo2Histories();
